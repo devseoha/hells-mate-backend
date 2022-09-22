@@ -1,23 +1,22 @@
 import { Injectable } from '@nestjs/common';
-import { createGroupDto } from '../dto/group.dto';
-import {
-  Activity,
-  Group,
-  GroupMissionDate,
-  GroupMissionDateList,
-  MissionCategory,
-  User,
-  UserGroup,
-} from '../../database/entities';
+import { createGroupDto } from '../dto/group.dto';;
 import { Connection, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { JwtService } from '@nestjs/jwt';
 import moment from 'moment';
+import { UserGroup } from '@/database/entities/user_group.entity';
+import { Group } from '@/database/entities/group.entity';
+import { GroupMissionDateList } from '@/database/entities/group_mission_date_list.entity';
+import { GroupMissionDate } from '@/database/entities/group_mission_date.entity';
+import {Activity} from "@/database/entities/activity.entity";
+import {User} from "@/database/entities/user.entity";
 
 @Injectable()
 export class GroupService {
-  constructor(
+constructor(
     private connection: Connection,
+
+    @InjectRepository(Activity)
+    private activityRepository: Repository<Activity>,
 
     @InjectRepository(User)
     private userRepository: Repository<User>,
@@ -32,10 +31,7 @@ export class GroupService {
     private groupMissionDateListRepository: Repository<GroupMissionDateList>,
 
     @InjectRepository(GroupMissionDate)
-    private groupMissionDateRepository: Repository<GroupMissionDate>,
-
-    @InjectRepository(Activity)
-    private activityRepository: Repository<Activity>,
+    private groupMissionDateRepository: Repository<GroupMissionDate>
   ) {}
 
   async getUserById(userId: number): Promise<User> {

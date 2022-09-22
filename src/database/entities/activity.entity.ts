@@ -1,11 +1,10 @@
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 import BaseEntity from './base.entity';
 import { Group } from './group.entity';
-import { GroupMissionDate } from './group_mission_date.entity';
 import { GroupMissionDateList } from './group_mission_date_list.entity';
 import { User } from './user.entity';
 
-@Entity('activity', { schema: 'hellthmate' })
+@Entity('activity', { schema: 'hells_mate' })
 export class Activity extends BaseEntity {
   @ManyToOne(() => User, (user) => user.Activity)
   @JoinColumn([{ name: 'user_id', referencedColumnName: 'id' }])
@@ -19,9 +18,9 @@ export class Activity extends BaseEntity {
   point: number;
 
   @ManyToOne(
-    () => GroupMissionDate,
-    (groupMissionDate) => groupMissionDate.Activity,
+    () => GroupMissionDateList,
+    (groupMissionDateList) => groupMissionDateList.Activity,
   )
-  @JoinColumn([{ name: 'group_mission_date_id', referencedColumnName: 'id' }])
-  GroupMissionDate: GroupMissionDate;
+  @JoinColumn([{ name: 'group_mission_date_list_id', referencedColumnName: 'id' }])
+  GroupMissionDateList: GroupMissionDateList;
 }

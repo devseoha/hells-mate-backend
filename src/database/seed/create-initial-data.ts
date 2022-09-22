@@ -1,6 +1,8 @@
 import { Connection } from 'typeorm';
 import { Factory, Seeder } from 'typeorm-seeding';
-import { Group, MissionCategory, User } from '../entities';
+import {User} from "@/database/entities/user.entity";
+import {Group} from "@/database/entities/group.entity";
+import {MissionCategory} from "@/database/entities/mission_category.entity";
 
 export class CreateInitialData implements Seeder {
   public async run(factory: Factory, connection: Connection): Promise<any> {

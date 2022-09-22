@@ -1,7 +1,8 @@
-import { Activity } from '@/database/entities';
+
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import {Activity} from "@/database/entities/activity.entity";
 
 @Injectable()
 export class ActivityService {

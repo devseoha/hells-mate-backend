@@ -1,15 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { User } from 'src/database/entities/user.entity';
 import { Connection, Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import axios from 'axios';
+import { User } from '@/database/entities/user.entity';
 
 @Injectable()
 export class UserService {
   constructor(
     private connection: Connection,
     private jwtService: JwtService,
+
     @InjectRepository(User)
     private userRepository: Repository<User>,
   ) {}

@@ -3,14 +3,12 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
-  OneToMany,
-  OneToOne,
 } from 'typeorm';
 import BaseEntity from './base.entity';
 import { Group } from './group.entity';
 import { User } from './user.entity';
 
-@Entity('user_group', { schema: 'hellthmate' })
+@Entity('user_group', { schema: 'hells_mate' })
 export class UserGroup extends BaseEntity {
   @ManyToOne(() => Group, (group) => group.UserGroup)
   @JoinColumn([{ name: 'group_id', referencedColumnName: 'id' }])

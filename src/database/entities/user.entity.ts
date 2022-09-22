@@ -4,7 +4,7 @@ import BaseEntity from './base.entity';
 import { Group } from './group.entity';
 import { UserGroup } from './user_group.entity';
 
-@Entity('user', { schema: 'hellthmate' })
+@Entity('user', { schema: 'hells_mate' })
 export class User extends BaseEntity {
   @Column({ type: 'varchar', name: 'nickname', comment: '닉네임' })
   nickname: string;

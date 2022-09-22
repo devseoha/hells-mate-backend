@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { Connection, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import {
-  Activity,
-  Group,
-  GroupMissionDate,
-  MissionCategory,
-  User,
-} from '../../database/entities';
+import { MissionCategory } from '@/database/entities/mission_category.entity';
+import {Activity} from "@/database/entities/activity.entity";
+import {Group} from "@/database/entities/group.entity";
+import {User} from "@/database/entities/user.entity";
+
+class GroupMissionDate {
+}
 
 @Injectable()
 export class MissionService {
@@ -51,7 +51,7 @@ export class MissionService {
       .leftJoinAndSelect('groupMissionDate.Group', 'group')
       .where('group.id=:groupId', { groupId })
       .getOne();
-    activity.GroupMissionDate = groupMissionDate;
+    // activity.GroupMissionDateList = groupMissionDate;
     const group = new Group();
     group.id = groupId;
     activity.Group = group;

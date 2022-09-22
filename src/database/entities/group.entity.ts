@@ -13,7 +13,7 @@ import { Activity } from './activity.entity';
 import { UserGroup } from './user_group.entity';
 import { GroupMissionDateList } from './group_mission_date_list.entity';
 
-@Entity('group', { schema: 'hellthmate' })
+@Entity('group', { schema: 'hells_mate' })
 export class Group extends BaseEntity {
   @Column({ type: 'varchar', name: 'title', comment: '그룹명' })
   title: string;

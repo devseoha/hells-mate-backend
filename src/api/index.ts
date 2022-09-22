@@ -1,1 +1,0 @@
-export { KakaoApi } from './kakao';
