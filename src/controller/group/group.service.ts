@@ -46,8 +46,8 @@ constructor(
     const group = new Group();
     group.title = data.title;
     group.content = data.content;
-    group.startDate = '20220901';
-    group.endDate = '20220907';
+    group.startDate = data.startDate;
+    group.endDate = data.endDate;
     const createdGroup = await this.groupRepository.save(group);
 
     const userGroup = new UserGroup();

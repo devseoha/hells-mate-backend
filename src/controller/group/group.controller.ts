@@ -21,7 +21,7 @@ export class GroupController {
   constructor(private readonly groupService: GroupService) {}
 
   @ApiOperation({
-    summary: '[완성/서하서하]팀장이 그룹을 생성하는 api',
+    summary: '팀장이 그룹을 생성하는 api',
   })
   @UseGuards(JwtAuthGuard)
   @Post('create')

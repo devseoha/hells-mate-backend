@@ -4,41 +4,24 @@
 
 ## 📂 Description
 ```
- 이것저것 만들어보고싶은 백엔드 개발자가 이것저것 만들어 봄
+해커톤때 만들었던 헬스메이트 완성해보기
 ```
 ## ✏️ Installation
 
 ```bash
 $ yarn 
-or
-$ npm i
 ```
 
 ## ✔️ Running the app
 
 ```bash
 # development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
+$ yarn start:dev
 
 # production mode
-$ npm run start:prod
+$ yarn build && yarn start
 ```
 
-## ✍️ Test
-
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
-```
 
 ## 🌐 License
 
