@@ -28,6 +28,7 @@ export class GroupController {
   async createGroup(@Req() req: any, @Body() data: createGroupDto) {
     const result = await this.groupService.createGroup(req.user.id, data);
     return {
+      result: true,
       code: 200,
       message: '그룹이 정상적으로 등록 되었습니다. ',
       data: result,
@@ -35,17 +36,29 @@ export class GroupController {
   }
 
   @ApiOperation({
-    summary: '팀원이 그룹을 수락하는 api',
+    summary: '[완성]팀원이 그룹토큰을 이용해 그룹 정보를 읽어오는 api',
+  })
+  @UseGuards(OptionalJwtAuthGuard)
+  @Get(':token')
+  async getGroupInfo(@Req() req: any, @Param('token') token: string) {
+    const result = await this.groupService.getGroupInfo(req.user.id, token);
+    return {
+      result: true,
+      code: 200,
+      message: '그룹 정보를 조회했습니다.',
+      data: result,
+    };
+  }
+
+  @ApiOperation({
+    summary: '[완성]팀원이 그룹을 수락하는 pai',
   })
   @UseGuards(JwtAuthGuard)
-  @Get(':id/accept')
-  async acceptGroup(
-    @Req() req: any,
-    @Param('id') id: number,
-    @Query('groupId') groupId: number,
-  ) {
-    const result = await this.groupService.acceptGroup(id, groupId);
+  @Post(':groupId/accept')
+  async acceptGroup(@Req() req: any, @Param('groupId') groupId: number) {
+    const result = await this.groupService.acceptGroup(req.user.id, groupId);
     return {
+      result: true,
       code: 200,
       message: '그룹 수락',
       data: result,
@@ -60,6 +73,7 @@ export class GroupController {
   async getGroup(@Req() req: any, @Param('id') id: number) {
     const result = await this.groupService.getGroupById(req.user.id, id);
     return {
+      result: true,
       code: 200,
       message: '그룹 조회 설공 ',
       data: result,
@@ -74,62 +88,10 @@ export class GroupController {
   async getGroupList(@Req() req: any) {
     const result = await this.groupService.getGroupList(req.user.id);
     return {
+      result: true,
       code: 200,
       message: '그룹 리스트 조회 설공',
       data: result,
-    };
-  }
-
-  @ApiOperation({
-    summary: '완성 - 문동우, 유저 완료도 ',
-  })
-  @UseGuards(JwtAuthGuard)
-  @Get(':groupId')
-  async getUserStatus(
-    @Req() req: any,
-    @Param('groupId') groupId: number,
-    @Query('date') date: string,
-  ) {
-    // //req.user
-    // const result = await this.groupService.getGroupById(id);
-    // return {
-    //   code: 200,
-    //   message: '그룹 조회 설공 ',
-    //   data: result,
-    // };
-    const userList = [
-      ['김민준', '이도현', '김지수'],
-      ['송우진', '김민준', '이수연'],
-      ['이수연', '김민준'],
-    ];
-    const hash = function (str, seed = 0) {
-      let h1 = 0xdeadbeef ^ seed,
-        h2 = 0x41c6ce57 ^ seed;
-      for (let i = 0, ch; i < str.length; i++) {
-        ch = str.charCodeAt(i);
-        h1 = Math.imul(h1 ^ ch, 2654435761);
-        h2 = Math.imul(h2 ^ ch, 1597334677);
-      }
-      h1 =
-        Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^
-        Math.imul(h2 ^ (h2 >>> 13), 3266489909);
-      h2 =
-        Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^
-        Math.imul(h1 ^ (h1 >>> 13), 3266489909);
-      return 4294967296 * (2097151 & h2) + (h1 >>> 0);
-    };
-
-    return {
-      code: 200,
-      message: '조회 성공',
-      data: [
-        userList[groupId % 3].map((v) => {
-          return {
-            name: v,
-            point: (Math.abs(hash(v) ^ groupId ^ hash(date)) % 3) * 2 + 1,
-          };
-        }),
-      ],
     };
   }
 }

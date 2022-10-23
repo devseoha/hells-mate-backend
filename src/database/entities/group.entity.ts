@@ -26,6 +26,7 @@ export class Group extends BaseEntity {
     type: 'varchar',
     name: 'token',
     comment: '그룹 고유 토큰 - 초대용',
+    nullable: true,
   })
   token: string;
 
