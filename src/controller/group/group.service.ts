@@ -1,18 +1,19 @@
-import { Injectable } from '@nestjs/common';
-import { createGroupDto } from '../dto/group.dto';;
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { createGroupDto } from '../dto/group.dto';
 import { Connection, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import moment from 'moment';
+import * as moment from 'moment-timezone';
 import { UserGroup } from '@/database/entities/user_group.entity';
 import { Group } from '@/database/entities/group.entity';
 import { GroupMissionDateList } from '@/database/entities/group_mission_date_list.entity';
 import { GroupMissionDate } from '@/database/entities/group_mission_date.entity';
-import {Activity} from "@/database/entities/activity.entity";
-import {User} from "@/database/entities/user.entity";
+import { Activity } from '@/database/entities/activity.entity';
+import { User } from '@/database/entities/user.entity';
+import { uuidv4 } from '@/common/uuid';
 
 @Injectable()
 export class GroupService {
-constructor(
+  constructor(
     private connection: Connection,
 
     @InjectRepository(Activity)
@@ -31,7 +32,7 @@ constructor(
     private groupMissionDateListRepository: Repository<GroupMissionDateList>,
 
     @InjectRepository(GroupMissionDate)
-    private groupMissionDateRepository: Repository<GroupMissionDate>
+    private groupMissionDateRepository: Repository<GroupMissionDate>,
   ) {}
 
   async getUserById(userId: number): Promise<User> {
@@ -43,35 +44,64 @@ constructor(
   }
 
   async createGroup(userId: number, data: createGroupDto): Promise<any> {
-    const group = new Group();
-    group.title = data.title;
-    group.content = data.content;
-    group.startDate = data.startDate;
-    group.endDate = data.endDate;
-    const createdGroup = await this.groupRepository.save(group);
+    const queryRunner = this.connection.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    let createdGroup;
 
-    const userGroup = new UserGroup();
-    userGroup.Group = group;
-    const user = new User();
-    user.id = userId;
-    userGroup.User = user;
-    userGroup.isAdmin = true;
-    await this.userGroupRepository.save(userGroup);
+    try {
+      const endDate = moment(data.startDate)
+        .add(data.dateCnt - 1, 'days')
+        .format('yyyyMMDD');
+      const group = new Group();
+      group.title = data.title;
+      group.description = data.description;
+      group.startDate = data.startDate;
+      group.endDate = endDate;
+      group.token = uuidv4();
+      createdGroup = await queryRunner.manager.save(group);
 
-    const arr = [];
+      const userGroup = new UserGroup();
+      userGroup.Group = group;
 
-    let date = 20220901;
-    for (let i = 0; i < 7; i++) {
-      const groupMissionDate = new GroupMissionDate();
-      // groupMissionDate.date = moment(data.startDate).format('YYYY-MM-DD')
-      groupMissionDate.date = String(date);
-      groupMissionDate.Group = group;
-      arr.push(groupMissionDate);
-      date++;
+      const user = new User();
+      user.id = userId;
+      userGroup.User = user;
+      userGroup.isAdmin = true;
+      await queryRunner.manager.save(userGroup);
+
+      // const arr = [];
+      //
+      // for (let i = 0; i < data.dateCnt; i++) {
+      //   const groupMissionDate = new GroupMissionDate();
+      //   groupMissionDate.date = moment(data.startDate).format('yyyyMMDD');
+      //   groupMissionDate.Group = group;
+      //   arr.push(groupMissionDate);
+      //   data.startDate = moment(data.startDate)
+      //     .add(1, 'day')
+      //     .format('yyyyMMDD');
+      // }
+      //
+      // await queryRunner.manager.save(arr);
+      // const arr = [];
+      //
+      // for (let i = 0; i < data.dateCnt; i++) {
+      //   const groupMissionDate = new GroupMissionDate();
+      //   groupMissionDate.date = moment(data.startDate).format('yyyyMMDD');
+      //   groupMissionDate.Group = group;
+      //   arr.push(groupMissionDate);
+      //   data.startDate = moment(data.startDate)
+      //     .add(1, 'day')
+      //     .format('yyyyMMDD');
+      // }
+      //
+      // await queryRunner.manager.save(arr);
+      await queryRunner.commitTransaction();
+    } catch (err) {
+      await queryRunner.rollbackTransaction();
+    } finally {
+      await queryRunner.release();
     }
-    console.log(arr);
-    await this.groupMissionDateRepository.save(arr);
-
     return createdGroup;
   }
 
@@ -88,91 +118,37 @@ constructor(
     return true;
   }
 
-  async getGroupList(userId = 1): Promise<any> {
-    const result: any = {};
-
-    const user: any = await this.userRepository.findOne({
-      where: { id: userId },
-    });
-    const cnt = Math.ceil(Math.random() * 2);
-    const arr33 = [2, 3, 2];
-    const complete = await this.activityRepository
-      .createQueryBuilder('a')
-      .leftJoinAndSelect('a.User', 'user')
-      .leftJoinAndSelect('a.Group', 'group')
-      .where('user.id=:userId', { userId })
-      .getMany();
-
-    user.complete = false;
-
-    const userGroupList = await this.groupRepository
+  async getGroupList(userId: number): Promise<any> {
+    const myGroupList = await this.groupRepository
       .createQueryBuilder('group')
-      .limit(arr33[cnt])
-      .orderBy('group.id', 'DESC')
+      .leftJoinAndSelect('group.UserGroup', 'userGroup')
+      .where('userGroup.userId=:userId', { userId })
       .getMany();
 
-    const nameList = [
-      '김민주',
-      '박주형',
-      '김미소',
-      '이윤정',
-      '강소리',
-      '이우형',
-      '윈터',
-      '헬린이',
-      '이진형',
-      '이진명',
-      '임기원',
-      '성용',
-      '건우',
-      '길동',
-      '지수',
-      '차현우',
-      '민준',
-      '송희',
-    ];
-
-    const groupCategoryId: any = [1, 2, 1, 1];
-    let k = 0;
-    result.group = userGroupList.map((x: any, i) => {
-      const cnt = Math.ceil(Math.random() * 8);
-      let name = [];
-      ++k;
-      for (let j = 0; j < cnt; j++) {
-        const cnt2 = Math.ceil(Math.ceil(Math.random() * 16));
-        name.push({
-          id: ++k,
-          nickname: nameList[cnt2],
-          complete: Math.random() < 0.5,
-        });
-      }
-      name[0] = user;
-      x.names = name;
-      name = [];
-      x.categoryId = groupCategoryId[i];
-      return x;
+    const groupIdList = myGroupList.map((x) => {
+      return x.id;
     });
-    return result;
-    // const groupList = await Promise.all(
-    //   userGroupList.map((userGroup) => {
-    //     const group = this.groupRepository
-    //       .createQueryBuilder('group')
-    //       .where('group.UserGroup=:userGroup', { userGroup: userGroup })
-    //       .getOne();
-    //     return {
-    //       group: group,
-    //       isAdmin: userGroup.isAdmin,
-    //     };
-    //   }),
-    // );
-    // return groupList;
+
+    const groupList = await this.groupRepository
+      .createQueryBuilder('group')
+      .leftJoinAndSelect('group.UserGroup', 'userGroup')
+      .leftJoinAndSelect('userGroup.User', 'user')
+      .where('userGroup.groupId IN (:groupIdList)', { groupIdList })
+      .getMany();
+    return groupList;
   }
 
-  async getGroupById(groupId: number): Promise<Group> {
+  async getGroupById(userId: number, groupId: number): Promise<Group> {
     const group = await this.groupRepository
       .createQueryBuilder('group')
-      .where('group.id=:id', { id: groupId })
+      .leftJoinAndSelect('group.UserGroup', 'userGroup')
+      .where('group.id=:groupId', { groupId })
+      .andWhere('userGroup.userId=:userId', { userId })
       .getOne();
+
+    if (!group) {
+      throw new BadRequestException('그룹아이디를 확인해주세요.');
+    }
     return group;
   }
 }

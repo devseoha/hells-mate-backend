@@ -1,9 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Connection, Repository } from 'typeorm';
+import { Connection, getConnection, Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
-import axios from 'axios';
 import { User } from '@/database/entities/user.entity';
+import { CreateAuthDto } from '@/controller/user/dto/create-auth.dto';
+import * as bcrypt from 'bcrypt';
+import { BaseNickname } from '@/database/entities/base_nickname.entity';
 
 @Injectable()
 export class UserService {
@@ -13,106 +19,160 @@ export class UserService {
 
     @InjectRepository(User)
     private userRepository: Repository<User>,
+
+    @InjectRepository(BaseNickname)
+    private baseNicknameRepository: Repository<BaseNickname>,
   ) {}
 
-  async test(user: any) {
-    console.log(user);
-    return true;
-  }
-
-  async validateUser(email: string, password: string) {
-    return true;
-  }
-
-  async login(token) {
+  async validateUser(email: string, password: string): Promise<any> {
     const user = await this.userRepository.findOne({
-      where: {
-        token,
-      },
+      where: { email: email },
+      select: ['id', 'email', 'nickname', 'password'],
     });
 
-    return {
-      code: 200,
-      message: '유저 조회 완료',
-      data: user,
-    };
-  }
+    if (!user) {
+      throw new NotFoundException('회원정보가 존재하지 않습니다.');
+    }
 
-  async getKakaoToken(code: string): Promise<string> {
-    const body = {
-      grant_type: 'authorization_code',
-      client_id: process.env.KAKAO_CLIENT_ID,
-      code,
-    };
-
-    const response = await axios({
-      method: 'POST',
-      url: process.env.KAKAO_TOKEN_URL,
-      timeout: 30000,
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',
-      },
-      data: new URLSearchParams(body).toString(),
-    });
-
-    if (response.status === 200) {
-      return response.data.access_token;
+    const result = await bcrypt.compare(password, user.password);
+    if (result) {
+      const { password, ...userWithoutPassword } = user;
+      return userWithoutPassword;
+    } else {
+      throw new BadRequestException('비밀번호가 일치하지 않습니다.');
     }
   }
 
-  async getUserInfo(kakaoToken: string) {
-    const headerUserInfo = {
-      'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',
-      Authorization: `Bearer ${kakaoToken}`,
-    };
+  async createNickname(): Promise<string> {
+    const front = await this.baseNicknameRepository
+      .createQueryBuilder('baseNickname')
+      .where('baseNickname.frontNickname IS NOT NULL')
+      .orderBy('RAND()')
+      .getOne();
 
-    const responseUserInfo = await axios({
-      method: 'GET',
-      url: process.env.KAKAO_USERINFO_URL,
-      timeout: 30000,
-      headers: headerUserInfo,
-    });
+    const back = await this.baseNicknameRepository
+      .createQueryBuilder('baseNickname')
+      .where('baseNickname.backNickname IS NOT NULL')
+      .orderBy('RAND()')
+      .getOne();
 
-    if (responseUserInfo.status === 200) {
-      return responseUserInfo.data;
+    const nickname =
+      (front?.frontNickname ? front.frontNickname : '오늘도') +
+      (back?.backNickname ? back.backNickname : '헬린이');
+
+    return nickname;
+  }
+
+  async join(data: CreateAuthDto): Promise<any> {
+    const hashedPassword = await bcrypt.hash(data.password, 12);
+
+    const email = await this.userRepository
+      .createQueryBuilder('user')
+      .where('user.email=:email', { email: data.email })
+      .andWhere('user.deletedAt IS NULL')
+      .getOne();
+
+    if (email) {
+      throw new BadRequestException('이미 사용중인 이메일 입니다.');
+    }
+
+    try {
+      const user = new User();
+      user.email = data.email;
+      user.password = hashedPassword;
+      const nickname = await this.createNickname();
+      user.nickname = nickname;
+
+      console.log(user);
+      const join = await this.userRepository.save(user);
+      const accessToken = await this.getAccessToken(join);
+      const refreshToken = await this.getRefreshToken(join);
+      const hashedRefreshToken = await bcrypt.hash(refreshToken, 12);
+
+      await this.setRefreshToken(join.id, hashedRefreshToken);
+
+      return { id: join.id, accessToken, refreshToken };
+    } catch (e) {
+      if (e?.code === 'ER_DUP_ENTRY') {
+        throw new BadRequestException({ message: e?.sqlMessage });
+      }
     }
   }
 
-  search(token: string) {
-    return this.userRepository.findOne({ token });
-  }
-
-  async register(userInfo: any) {
-    const user = new User();
-    user.token = userInfo.id.toString();
-    if (userInfo.properties) {
-      user.profile = userInfo.properties?.profile_image ?? '';
-      user.nickname = userInfo.properties?.nickname ?? '';
-    }
-
-    const createdUser = await this.userRepository.save(user);
-
-    return createdUser;
-  }
-
-  async getAccessToken(user: User) {
+  async getAccessToken(user: any) {
     const payload = {
-      token: String(user.id),
+      id: user.id,
+      email: user.email,
+      username: user.username,
       nickname: user.nickname,
-      profile: user.profile,
     };
-
     return this.jwtService.sign(payload, {
       secret: process.env.JWT_ACCESS_TOKEN_SECRET,
       expiresIn: `${process.env.JWT_ACCESS_TOKEN_EXPIRATION_TIME}s`,
     });
   }
 
-  async decodeAccessToken(accessToken: string) {
-    return this.jwtService.decode(accessToken);
+  async getRefreshToken(user: any) {
+    const payload = {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      nickname: user.nickname,
+    };
+    return this.jwtService.sign(payload, {
+      secret: process.env.JWT_REFRESH_TOKEN_SECRET,
+      expiresIn: `${process.env.JWT_REFRESH_TOKEN_EXPIRATION_TIME}s`,
+    });
   }
 
-  async checkUser(token) {
-    return this.userRepository.findOne({ token });
+  async setRefreshToken(id: number, refreshToken: string) {
+    await getConnection()
+      .createQueryBuilder()
+      .update(User)
+      .set({ refreshToken })
+      .where('id=:id', { id })
+      .execute();
+  }
+
+  async removeRefreshToken(id: number) {
+    await getConnection()
+      .createQueryBuilder()
+      .update(User)
+      .set({ refreshToken: null })
+      .where('id=:id', { id })
+      .execute();
+  }
+
+  async login(user: any) {
+    const accessToken = await this.getAccessToken(user);
+    const refreshToken = await this.getRefreshToken(user);
+    const hashedRefreshToken = await bcrypt.hash(refreshToken, 12);
+
+    await this.setRefreshToken(user.id, hashedRefreshToken);
+
+    return {
+      id: user.id,
+      accessToken,
+      refreshToken,
+    };
+  }
+
+  async logout(user: any): Promise<boolean> {
+    await this.removeRefreshToken(user.id);
+    return true;
+  }
+
+  async validateRefreshToken(id: number, refreshToken: string) {
+    const user = await this.userRepository.findOne({
+      where: { id },
+      select: ['id', 'email', 'nickname', 'refreshToken'],
+    });
+
+    const result = await bcrypt.compare(refreshToken, user.refreshToken);
+    if (result) {
+      const { refreshToken, ...userWithoutRefreshToken } = user;
+      console.log('userWithoutRefreshToken:', userWithoutRefreshToken);
+      return userWithoutRefreshToken;
+    }
   }
 }

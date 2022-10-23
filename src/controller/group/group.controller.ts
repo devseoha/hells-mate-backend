@@ -21,10 +21,10 @@ export class GroupController {
   constructor(private readonly groupService: GroupService) {}
 
   @ApiOperation({
-    summary: '팀장이 그룹을 생성하는 api',
+    summary: '[완료]팀장이 그룹을 생성하는 api',
   })
   @UseGuards(JwtAuthGuard)
-  @Post('create')
+  @Post()
   async createGroup(@Req() req: any, @Body() data: createGroupDto) {
     const result = await this.groupService.createGroup(req.user.id, data);
     return {
@@ -35,7 +35,7 @@ export class GroupController {
   }
 
   @ApiOperation({
-    summary: '[완성/서하서하]팀원이 그룹을 수락하는 api',
+    summary: '팀원이 그룹을 수락하는 api',
   })
   @UseGuards(JwtAuthGuard)
   @Get(':id/accept')
@@ -53,13 +53,12 @@ export class GroupController {
   }
 
   @ApiOperation({
-    summary: '그룹 정보 조회 with Group_Id',
+    summary: '[완성]그룹 정보 조회 with Group_Id',
   })
   @UseGuards(JwtAuthGuard)
   @Get('info/:id')
   async getGroup(@Req() req: any, @Param('id') id: number) {
-    //req.user
-    const result = await this.groupService.getGroupById(id);
+    const result = await this.groupService.getGroupById(req.user.id, id);
     return {
       code: 200,
       message: '그룹 조회 설공 ',
@@ -68,7 +67,7 @@ export class GroupController {
   }
 
   @ApiOperation({
-    summary: '[완성/서하서하]참여한 그룹리스트 조회 api',
+    summary: '[완료]참여한 그룹리스트 조회 api',
   })
   @UseGuards(OptionalJwtAuthGuard)
   @Get()

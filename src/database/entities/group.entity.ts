@@ -7,19 +7,20 @@ import {
   OneToOne,
 } from 'typeorm';
 import BaseEntity from './base.entity';
-import { User } from './user.entity';
 import { GroupMissionDate } from './group_mission_date.entity';
 import { Activity } from './activity.entity';
 import { UserGroup } from './user_group.entity';
 import { GroupMissionDateList } from './group_mission_date_list.entity';
+import { Transform } from 'class-transformer';
+import moment from 'moment';
 
 @Entity('group', { schema: 'hells_mate' })
 export class Group extends BaseEntity {
   @Column({ type: 'varchar', name: 'title', comment: '그룹명' })
   title: string;
 
-  @Column({ type: 'varchar', name: 'content', comment: '그룹 설명' })
-  content: string;
+  @Column({ type: 'varchar', name: 'description', comment: '그룹 설명' })
+  description: string;
 
   @Column({
     type: 'varchar',
@@ -31,11 +32,13 @@ export class Group extends BaseEntity {
   @OneToMany(() => UserGroup, (userGroup) => userGroup.Group)
   UserGroup: UserGroup[];
 
+  @Transform((startDate: any) => moment(startDate).format('YYYY-MM-DD'))
   @Column({ type: 'varchar', name: 'start_date', comment: '시작일' })
-  startDate: string;
+  startDate: Date | string;
 
+  @Transform((endDate: any) => moment(endDate).format('YYYY-MM-DD'))
   @Column({ type: 'varchar', name: 'end_date', comment: '종료일' })
-  endDate: string;
+  endDate: Date | string;
 
   @OneToMany(
     () => GroupMissionDate,

@@ -1,4 +1,11 @@
-import { Column, Entity, ManyToMany, ManyToOne, OneToMany, OneToOne } from 'typeorm';
+import {
+  Column,
+  Entity,
+  ManyToMany,
+  ManyToOne,
+  OneToMany,
+  OneToOne,
+} from 'typeorm';
 import { Activity } from './activity.entity';
 import BaseEntity from './base.entity';
 import { Group } from './group.entity';
@@ -11,6 +18,13 @@ export class User extends BaseEntity {
 
   @Column({
     type: 'varchar',
+    name: 'email',
+    comment: 'email',
+  })
+  email: string;
+
+  @Column({
+    type: 'varchar',
     name: 'profile',
     comment: '프로필',
     nullable: true,
@@ -19,13 +33,22 @@ export class User extends BaseEntity {
 
   @Column({
     type: 'varchar',
-    name: 'token',
-    comment: '카카오톡 OAuth 토큰',
-    default: '1',
+    name: 'password',
+    comment: 'password',
+    select: false,
   })
-  token: string;
+  password: string;
 
-  @ManyToMany(() => UserGroup, (userGroup) => userGroup.User)
+  @Column({
+    type: 'varchar',
+    name: 'refresh_token',
+    comment: '리프래쉬 토큰',
+    nullable: true,
+    select: false,
+  })
+  refreshToken: string;
+
+  @OneToMany(() => UserGroup, (userGroup) => userGroup.User)
   UserGroup: UserGroup[];
 
   @OneToMany(() => Activity, (activity) => activity.User)

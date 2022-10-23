@@ -3,6 +3,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Injectable } from '@nestjs/common';
 import { UserService } from '../controller/user/user.service';
 import * as dotenv from 'dotenv';
+import { validate } from 'class-validator';
 dotenv.config();
 
 @Injectable()

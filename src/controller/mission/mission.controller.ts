@@ -61,7 +61,7 @@ export class MissionController {
   // }
 
   @ApiOperation({
-    summary: '[완성/서하서하] 팀원이 미션 인증하기 하는 api',
+    summary: '팀원이 미션 인증하기 하는 api',
   })
   @Get()
   // @UseGuards(JwtAuthGuard)

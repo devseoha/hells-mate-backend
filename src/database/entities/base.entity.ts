@@ -3,11 +3,12 @@ import {
   PrimaryGeneratedColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  DeleteDateColumn,
 } from 'typeorm';
 
 @Entity()
 export default class Base {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ type: 'int', name: 'id' })
   id!: number;
 
   @CreateDateColumn({
@@ -22,7 +23,7 @@ export default class Base {
   })
   updatedAt: Date;
 
-  @UpdateDateColumn({
+  @DeleteDateColumn({
     type: 'datetime',
     name: 'deleted_at',
   })

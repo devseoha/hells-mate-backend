@@ -7,11 +7,12 @@ import { LocalStrategy } from '../../auth/local.strategy';
 import { JwtStrategy } from '../../auth/jwt.strategy';
 import { PassportModule } from '@nestjs/passport';
 import { User } from '@/database/entities/user.entity';
+import { BaseNickname } from '@/database/entities/base_nickname.entity';
 
 @Module({
   imports: [
     PassportModule,
-    TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forFeature([User, BaseNickname]),
     JwtModule.register({
       secret: process.env.JWT_ACCESS_TOKEN_SECRET,
       signOptions: {

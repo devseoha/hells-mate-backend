@@ -1,56 +1,67 @@
-import { Controller, Get, Query, Req, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
 import { UserService } from './user.service';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
+import { CreateAuthDto } from '@/controller/user/dto/create-auth.dto';
+import { LocalAuthGuard } from '@/auth/local-auth.guard';
+import { JwtRefreshGuard } from '@/auth/jwt-refresh.guard';
 
 @Controller('user')
 @ApiTags('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @UseGuards(JwtAuthGuard)
-  @Get()
-  create(@Req() req: any) {
-    return this.userService.test(req.user);
-  }
-
-  @Get('/kakao/callback')
-  async kakaoLogin(@Query('code') code, @Res({ passthrough: true }) res) {
-    const kakaoToken = await this.userService.getKakaoToken(code);
-    const userInfo = await this.userService.getUserInfo(kakaoToken);
-
-    console.log({ userInfo });
-    const isExistUser = await this.userService.checkUser(userInfo.id);
-
-    if (!isExistUser) {
-      const createdUser = this.userService.register(userInfo);
-      return {
-        code: 201,
-        message: 'CREATED',
-        data: createdUser,
-      };
-    }
-
-    const accessToken = await this.userService.getAccessToken(userInfo);
-
+  @ApiOperation({ summary: '회원가입' })
+  @Post('/join')
+  async join(@Body() data: CreateAuthDto) {
+    const result = await this.userService.join(data);
     return {
+      result: true,
       code: 200,
-      message: 'OK',
-      data: { accessToken },
+      data: {
+        id: result.id,
+        accessToken: result.accessToken,
+        refresh: result.refreshToken,
+        message: '가입 되었습니다.',
+      },
     };
   }
 
-  @ApiOperation({
-    summary: '로그인 api',
-  })
-  @Get('login')
-  async login(@Req() req: any) {
-    const accessToken = req.headers.authorization;
-    console.log(accessToken);
-    const { token }: any = await this.userService.decodeAccessToken(
-      accessToken.split(' ')[1],
-    );
+  @ApiOperation({ summary: '로그인' })
+  @UseGuards(LocalAuthGuard)
+  @Post('/login')
+  async login(@Req() req) {
+    const result = await this.userService.login(req.user);
+    return {
+      result: true,
+      code: 200,
+      data: {
+        id: result.id,
+        accessToken: result.accessToken,
+        refreshToken: result.refreshToken,
+      },
+    };
+  }
 
-    return this.userService.login(token);
+  @ApiOperation({ summary: '로그아웃' })
+  @UseGuards(JwtAuthGuard)
+  @Post('/logout')
+  async logout(@Req() req) {
+    const result = await this.userService.logout(req.user);
+    req.logout();
+    return {
+      result: true,
+      code: 200,
+      data: {
+        message: '정상적으로 로그아웃 되었습니다.',
+      },
+    };
+  }
+
+  @ApiOperation({ summary: '토큰 갱신' })
+  @UseGuards(JwtRefreshGuard)
+  @Post('/refresh')
+  async refresh(@Req() req) {
+    return this.userService.login(req.user);
   }
 }

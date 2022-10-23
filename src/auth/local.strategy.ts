@@ -7,7 +7,7 @@ import { UserService } from '../controller/user/user.service';
 export class LocalStrategy extends PassportStrategy(Strategy, 'local') {
   constructor(private readonly userService: UserService) {
     super({
-      usernameField: 'id',
+      usernameField: 'email',
       passwordField: 'password',
     });
   }
